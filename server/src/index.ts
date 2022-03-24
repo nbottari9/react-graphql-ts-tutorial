@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { MikroORM } from "@mikro-orm/core";
-import { __prod__ } from "./constants";
+import { COOKIE_NAME, __prod__ } from "./constants";
 import microConfig from "./mikro-orm.config";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
@@ -21,9 +21,12 @@ const main = async () => {
 
     const app = express();
 
+    const redisError: any = () => {
+        console.log(console.error, "**START REDIS SERVER**");
+    };
     const RedisStore = connectRedis(session);
     const redisClient = createClient({ legacyMode: true });
-    redisClient.connect().catch(console.error);
+    redisClient.connect().catch(redisError());
 
     app.use(
         cors({
@@ -33,7 +36,7 @@ const main = async () => {
     );
     app.use(
         session({
-            name: "qid",
+            name: COOKIE_NAME,
             store: new (RedisStore as any)({
                 client: redisClient,
                 disableTouch: true,

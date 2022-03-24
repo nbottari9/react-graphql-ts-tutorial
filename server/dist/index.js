@@ -31,15 +31,18 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
     yield orm.getMigrator().up();
     const app = (0, express_1.default)();
+    const redisError = () => {
+        console.log(console.error, "**START REDIS SERVER**");
+    };
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
     const redisClient = (0, redis_1.createClient)({ legacyMode: true });
-    redisClient.connect().catch(console.error);
+    redisClient.connect().catch(redisError());
     app.use((0, cors_1.default)({
         origin: "http://localhost:3000",
         credentials: true,
     }));
     app.use((0, express_session_1.default)({
-        name: "qid",
+        name: constants_1.COOKIE_NAME,
         store: new RedisStore({
             client: redisClient,
             disableTouch: true,
