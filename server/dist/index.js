@@ -22,7 +22,7 @@ const type_graphql_1 = require("type-graphql");
 const hello_1 = require("./resolvers/hello");
 const post_1 = require("./resolvers/post");
 const user_1 = require("./resolvers/user");
-const redis_1 = require("redis");
+const ioredis_1 = __importDefault(require("ioredis"));
 const express_session_1 = __importDefault(require("express-session"));
 const connect_redis_1 = __importDefault(require("connect-redis"));
 const apollo_server_core_1 = require("apollo-server-core");
@@ -31,12 +31,8 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
     yield orm.getMigrator().up();
     const app = (0, express_1.default)();
-    const redisError = () => {
-        console.log(console.error, "**START REDIS SERVER**");
-    };
     const RedisStore = (0, connect_redis_1.default)(express_session_1.default);
-    const redisClient = (0, redis_1.createClient)({ legacyMode: true });
-    redisClient.connect().catch(redisError());
+    const redis = new ioredis_1.default();
     app.use((0, cors_1.default)({
         origin: "http://localhost:3000",
         credentials: true,
@@ -44,7 +40,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     app.use((0, express_session_1.default)({
         name: constants_1.COOKIE_NAME,
         store: new RedisStore({
-            client: redisClient,
+            client: redis,
             disableTouch: true,
         }),
         cookie: {
@@ -62,7 +58,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             resolvers: [hello_1.HelloResolver, post_1.PostResolver, user_1.UserResolver],
             validate: false,
         }),
-        context: ({ req, res }) => ({ em: orm.em, req, res }),
+        context: ({ req, res }) => ({ em: orm.em, req, res, redis }),
         plugins: [(0, apollo_server_core_1.ApolloServerPluginLandingPageGraphQLPlayground)()],
     });
     yield apolloServer.start();
