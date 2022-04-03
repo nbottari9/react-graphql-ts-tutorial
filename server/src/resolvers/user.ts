@@ -41,7 +41,7 @@ export class UserResolver {
     async changePassword(
         @Arg("token") token: string,
         @Arg("newPassword") newPassword: string,
-        @Ctx() { redis, em, req }: MyContext
+        @Ctx() { redis, req }: MyContext
     ): Promise<UserResponse> {
         if (newPassword.length <= 2) {
             return {
@@ -67,7 +67,8 @@ export class UserResolver {
             };
         }
 
-        const user = await em.findOne(User, { id: parseInt(userId) });
+        const UserIdNum = parseInt(userId);
+        const user = await User.findOne(UserIdNum);
 
         if (!user) {
             return {
@@ -81,7 +82,10 @@ export class UserResolver {
         }
 
         user.password = await argon2.hash(newPassword);
-        await em.persistAndFlush(user);
+        User.update(
+            { id: UserIdNum },
+            { password: await argon2.hash(newPassword) }
+        );
 
         await redis.del(key);
 
