@@ -12,25 +12,32 @@ import connectRedis from "connect-redis";
 import { MyContext } from "./types";
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import cors from "cors";
-import { createConnection } from "typeorm";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
+import { DataSource } from "typeorm";
+import path from "path";
+
+//rerun
+export const conn = new DataSource({
+    type: "postgres",
+    database: "lireddit2",
+    username: "postgres",
+    password: "Emerson2468_",
+    logging: true,
+    synchronize: true,
+    entities: [Post, User],
+    migrations: [path.join(__dirname, "./migrations/*")],
+});
 
 const main = async () => {
-    const conn = await createConnection({
-        type: "postgres",
-        database: "lireddit2",
-        username: "postgres",
-        password: "Emerson2468_",
-        logging: true,
-        synchronize: true,
-        entities: [Post, User],
-    });
-
     const app = express();
 
     const RedisStore = connectRedis(session);
     const redis = new Redis();
+
+    await conn.initialize();
+    conn.runMigrations();
+    // await Post.delete({});
 
     app.use(
         cors({
